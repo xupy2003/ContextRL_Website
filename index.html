@@ -1,0 +1,916 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta name="description" content="Context-Aware RL for Agentic and Multimodal LLMs">
+  <meta name="keywords" content="Reinforcement Learning, LLMs, Agentic AI, Multimodal, GRPO, Context Grounding, ContextRL">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Context-Aware RL for Agentic and Multimodal LLMs</title>
+
+  <link href="https://fonts.googleapis.com/css?family=Google+Sans|Noto+Sans|Castoro" rel="stylesheet">
+
+  <link rel="stylesheet" href="./static/css/bulma.min.css">
+  <link rel="stylesheet" href="./static/css/fontawesome.all.min.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/jpswalsh/academicons@1/css/academicons.min.css">
+
+  <link rel="stylesheet" href="./static/css/index.css">
+  <link rel="stylesheet" href="./static/css/top_button.css">
+  <link rel="stylesheet" href="./static/css/navbar.css">
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
+  <script defer src="./static/js/fontawesome.all.min.js"></script>
+  <script src="./static/js/navbar.js"></script>
+  <script src="./static/js/mathjax.js"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+
+  <style>
+    :root {
+      --color-context-blue: #246cae;
+      --color-rl-red:       #da2851;
+      --color-highlight:    #e87d1e;
+    }
+
+    /* Result tables */
+    .result-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.86rem;
+    }
+    .result-table th {
+      background-color: #f5f5f5;
+      padding: 8px 10px;
+      text-align: center;
+      border: 1px solid #dbdbdb;
+      font-weight: 600;
+      line-height: 1.3;
+    }
+    .result-table td {
+      padding: 6px 10px;
+      text-align: center;
+      border: 1px solid #dbdbdb;
+    }
+    .result-table tr:nth-child(even) td {
+      background-color: #fafafa;
+    }
+    .result-table .group-header td {
+      background-color: #efefef;
+      font-style: italic;
+      text-align: left;
+      padding-left: 10px;
+      border-top: 2px solid #ccc;
+    }
+    .result-table td:first-child {
+      text-align: left;
+      padding-left: 22px;
+    }
+    .result-table .group-header td:first-child {
+      padding-left: 10px;
+    }
+    .result-table .best {
+      font-weight: bold;
+      color: var(--color-rl-red);
+    }
+    .result-table .our-row td {
+      background-color: #fff0f3 !important;
+    }
+    .result-table .overall-row td {
+      background-color: #fffbe6 !important;
+      font-weight: bold;
+    }
+
+    /* Method formula boxes */
+    .method-box {
+      background: #f4f8ff;
+      border-left: 4px solid var(--color-context-blue);
+      padding: 1.25rem 1.5rem;
+      border-radius: 4px;
+      margin: 1.25rem 0;
+    }
+
+    /* Key finding box */
+    .finding-box {
+      background: #fff8f0;
+      border: 1px solid #ffd6a0;
+      border-radius: 6px;
+      padding: 1rem 1.5rem;
+      margin: 1.25rem 0;
+      text-align: left;
+    }
+
+    /* Construction side cards */
+    .construction-card {
+      border: 1px solid #dbdbdb;
+      border-radius: 8px;
+      padding: 1.5rem;
+      height: 100%;
+      text-align: left;
+    }
+
+    /* Stat pills */
+    .stat-pill {
+      display: inline-block;
+      background: var(--color-context-blue);
+      color: white;
+      border-radius: 20px;
+      padding: 4px 14px;
+      font-size: 0.875rem;
+      margin: 4px;
+      font-weight: 600;
+    }
+    .stat-pill.red    { background: var(--color-rl-red); }
+    .stat-pill.orange { background: var(--color-highlight); }
+
+    /* PDF embed */
+    .pdf-embed {
+      width: 100%;
+      border: none;
+      display: block;
+    }
+
+    /* NeurIPS badge */
+    .venue-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--color-context-blue), #1a5490);
+      color: white;
+      border-radius: 6px;
+      padding: 5px 18px;
+      font-family: 'Google Sans', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      margin-bottom: 1rem;
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <!-- Navbar -->
+  <nav class="navbar" role="navigation" aria-label="main navigation">
+    <div class="navbar-brand">
+      <a role="button" class="navbar-burger" aria-label="menu" aria-expanded="false">
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+        <span aria-hidden="true"></span>
+      </a>
+    </div>
+    <div class="navbar-menu">
+      <div class="navbar-start" style="flex-grow: 1; justify-content: center;">
+        <a class="navbar-item" href="https://xupy2003.github.io/" target="_blank">
+          <span class="icon"><i class="fas fa-home"></i></span>
+        </a>
+      </div>
+    </div>
+  </nav>
+
+  <!-- Table of Contents -->
+  <div class="toc-wrapper">
+    <h4 style="margin-bottom: 10px;"><a href="#">Table of Contents</a></h4>
+    <ul class="toc-list">
+      <li><a href="#introduction">Introduction</a></li>
+      <li><a href="#probe">Context Probe</a></li>
+      <li><a href="#data-construction">Data Construction</a></li>
+      <li><a href="#method">Method</a></li>
+      <li>
+        <a href="#results">Results</a>
+        <div class="toc-subitem">
+          <a href="#agentic-results">Long-Horizon</a>
+        </div>
+        <div class="toc-subitem">
+          <a href="#multimodal-results">Multimodal</a>
+        </div>
+        <div class="toc-subitem">
+          <a href="#analysis">Analysis</a>
+        </div>
+      </li>
+      <li><a href="#BibTeX">BibTeX</a></li>
+    </ul>
+  </div>
+
+
+  <!-- ==================== HERO ==================== -->
+  <section class="hero">
+    <div class="hero-body">
+      <div class="container is-max-desktop">
+        <div class="columns is-centered">
+          <div class="column has-text-centered">
+
+            <h1 class="title is-1 publication-title is-bold">
+              Context-Aware RL for Agentic and Multimodal LLMs
+            </h1>
+
+            <div class="is-size-5 publication-authors">
+              <span class="author-block">
+                <a href="https://xupy2003.github.io/" target="_blank">Peiyang Xu</a><sup>1</sup>
+                <a href="mailto:px4668@princeton.edu"><i class="fas fa-envelope" style="font-size:0.8em; margin-left:2px;"></i></a>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.libangzheng.com/" target="_blank">Bangzheng Li</a><sup>2</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://sijial430.github.io/" target="_blank">Sijia Liu</a><sup>1</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.karthiknarasimhan.com/" target="_blank">Karthik R. Narasimhan</a><sup>1</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://ece.princeton.edu/people/pramod-viswanath" target="_blank">Pramod Viswanath</a><sup>1</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://www.princeton.edu/~pmittal/" target="_blank">Prateek Mittal</a><sup>1</sup>,
+              </span>
+              <span class="author-block">
+                <a href="https://zeyofu.github.io/" target="_blank">Xingyu Fu</a><sup>1</sup>
+                <a href="mailto:xingyufu@princeton.edu"><i class="fas fa-envelope" style="font-size:0.8em; margin-left:2px;"></i></a>
+              </span>
+            </div>
+
+            <div class="is-size-6 publication-authors" style="margin-top: 0.4rem; color: #555;">
+              <sup>1</sup>Princeton University
+              <span style="margin-left: 1.5em;"><sup>2</sup>UC Davis</span>
+            </div>
+
+            <div class="column has-text-centered" style="margin-top: 0.25rem;">
+              <div class="publication-links">
+                <span class="link-block">
+                  <a href="#" class="external-link button is-normal is-rounded is-dark" target="_blank">
+                    <span class="icon"><i class="ai ai-arxiv"></i></span>
+                    <span>arXiv</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://github.com/xupy2003/ContextAwareRL" class="external-link button is-normal is-rounded is-dark" target="_blank">
+                    <span class="icon"><i class="fab fa-github"></i></span>
+                    <span>Code</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://huggingface.co/collections/xupy21/contextrl-models" class="external-link button is-normal is-rounded is-dark" target="_blank">
+                    <span class="icon"><p style="font-size:18px; margin:0;">🤗</p></span>
+                    <span>Models</span>
+                  </a>
+                </span>
+                <span class="link-block">
+                  <a href="https://huggingface.co/collections/xupy21/contextrl-datasets" class="external-link button is-normal is-rounded is-dark" target="_blank">
+                    <span class="icon"><p style="font-size:18px; margin:0;">📊</p></span>
+                    <span>Datasets</span>
+                  </a>
+                </span>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== TEASER ==================== -->
+  <section class="hero teaser">
+    <div class="container is-max-desktop">
+      <div class="content has-text-centered">
+        <img src="assets/ContextRL_pipeline.png" width="88%" alt="ContextRL overview diagram">
+        <p style="text-align: left; margin-top: 1rem;">
+          <b>Overview of <span style="color: var(--color-context-blue);">Context</span><span style="color: var(--color-rl-red);">RL</span>.</b>
+          We augment GRPO with a context-awareness loss built from contrastive context pairs.
+          For each query–answer pair \((Q, A)\), an anchor context \(C^+\) supports the answer
+          while a confounder \(C^-\) is superficially similar but inconsistent with it.
+          Given the answer, the auxiliary objective trains the policy to select the supporting context
+          over the confounder, improving context-aware reasoning in both coding and multimodal settings.
+          <b>Key finding:</b> ContextRL improves coding &amp; multimodal performance; SFT-only does not.
+        </p>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== INTRODUCTION ==================== -->
+  <section class="section" id="introduction">
+    <div class="container" style="margin-bottom: 2vh;">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Introduction</h2>
+          <div class="content has-text-justified">
+            <p>
+              Large language models (LLMs) have progressed into general-purpose reasoning engines capable of
+              operating over rich, long-form contexts — including agentic systems that interleave reasoning with
+              tool use over extended horizons, and multimodal models that combine fine-grained visual perception
+              with textual reasoning. As these systems scale to increasingly complex tasks, their performance
+              depends not only on reasoning ability, but also on
+              <b>grounding decisions in sparse yet decisive contextual evidence</b>: an early observation in
+              a long agent trajectory, a single line in a tool trace, or a subtle visual detail in a dense image.
+            </p>
+            <p>
+              When such evidence is overlooked, models make locally plausible but context-inconsistent decisions.
+              We call this failure mode <b>context unawareness</b>: the relevant information is present in the
+              context, yet the model's prediction is not grounded in it.
+            </p>
+          </div>
+
+          <div style="margin: 2rem 0;">
+            <div class="content has-text-centered">
+              <img src="assets/ContextRL_Failcase.png" width="100%" alt="Context unawareness failure cases">
+              <p style="text-align: left; margin-top: 0.75rem;">
+                <b>Figure 1: Context unawareness manifests across both agentic and multimodal systems.</b>
+                <b>Left:</b> In an agentic code-editing setting, the model has access to the relevant source file
+                but fails to maintain consistency across edits, removing the definition of variable
+                <code>i</code> that is subsequently referenced — causing a runtime error.
+                <b>Right:</b> In a multimodal reasoning setting, the model fails to correctly ground its answer
+                in the visual evidence. Although \(g(x)\) approaches \(y\!=\!3\) as \(x \to -1\), the model
+                misreads the value as \(2\) and produces an incorrect prediction.
+              </p>
+            </div>
+          </div>
+
+          <div class="content has-text-justified">
+            <p>
+              To quantify this failure mode, we introduce a controlled <b>contrastive context probe</b> and find
+              a roughly 40-point gap between proprietary and widely-used open-source models on context selection
+              accuracy — despite open-source models being competitive on standard benchmarks.
+            </p>
+            <p>
+              Motivated by this, we propose
+              <b><span style="color: var(--color-context-blue);">Context</span><span style="color: var(--color-rl-red);">RL</span></b>
+              (Context-Aware Reinforcement Learning), a post-training method that augments RL with an explicit
+              context-selection auxiliary objective.
+              We construct contrastive context data in two domains: for coding agents, trajectories serve as
+              contexts, yielding <b>1k pairs</b> built via condition filtering; for multimodal reasoning, images
+              serve as contexts, yielding <b>7k pairs</b> via generative editing and similarity search.
+              ContextRL is incorporated into standard GRPO post-training via a logit-level contrastive loss
+              that favors the context aligned with the ground-truth answer.
+            </p>
+          </div>
+
+          <div style="text-align: center; margin: 1.5rem 0;">
+            <span class="stat-pill">+2.25% over GRPO on 5 long-horizon benchmarks</span>
+            <span class="stat-pill red">+1.8% across 12 diverse multimodal benchmarks</span>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== CONTEXT PROBE ==================== -->
+  <section class="section" id="probe">
+    <div class="container" style="margin-bottom: 2vh;">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">The Contrastive Context Probe</h2>
+          <div class="content has-text-justified">
+            <figure style="float: right; width: 44%; margin: 0 0 1rem 1.75rem;">
+              <img src="assets/fig1_cd.jpg" width="100%" alt="Contrastive context probe results">
+              <figcaption style="font-size: 0.84rem; color: #444; margin-top: 0.5rem; text-align: left;">
+                <b>Figure 2: Context selection accuracy given a query–answer pair.</b>
+                GPT-4.1 and Claude Opus 4.7 perform reliably (&gt;0.95), while Qwen3-VL 8B
+                and Qwen3.5 9B remain near random (0.5) despite strong benchmark performance.
+              </figcaption>
+            </figure>
+            <p>
+              To quantify context unawareness, we construct a controlled <b>contrastive context probe</b>:
+              200 contrastive pairs from agentic trajectories and 200 from visual question answering (VQA) images.
+              Each example presents the model with a question, a candidate answer, and two closely matched contexts
+              that support <em>different</em> answers — the model must select the context that justifies the
+              candidate answer.
+            </p>
+            <p>
+              This simple test reveals a <b>~40-point gap</b> between proprietary models (GPT-4.1, Claude Opus 4.7)
+              and widely-used open-source models. Notably, strong open-source models such as Qwen3-VL 8B and
+              Qwen3.5 9B perform <b>near random choice</b> on this probe, despite their competitive performance
+              on standard benchmarks. These results suggest that strong benchmark performance can
+              <em>obscure</em> failures in context grounding.
+            </p>
+            <div style="clear: both;"></div>
+          </div>
+
+          <div class="finding-box">
+            <b>Key Insight:</b> Models that score highly on standard benchmarks may still fail to identify
+            the specific evidence that supports a given answer. Context unawareness is a distinct capability
+            gap that standard accuracy-based evaluations do not capture.
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== DATA CONSTRUCTION ==================== -->
+  <section class="section" id="data-construction">
+    <div class="container" style="margin-bottom: 2vh;">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Contrastive Context Pairs Construction</h2>
+          <div class="content has-text-justified">
+            <p>
+              We construct contrastive context pairs in both agentic and multimodal domains.  We use pipelines specifically designed to yield pairs that are nearly identical
+              at the surface level, differing only in a small but semantically decisive region.
+              This ensures that selecting the correct context requires genuine understanding of the
+              evidence rather than exploitation of surface statistics.
+            </p>
+          </div>
+
+          <div style="margin: 2rem 0;">
+            <div class="content has-text-centered">
+              <img src="assets/ContextRL_Construction.png" width="100%" alt="Contrastive context pairs construction pipeline">
+              <p style="text-align: left; margin-top: 0.75rem;">
+                <b>Figure 4: Contrastive context pairs construction pipeline.</b>
+                <b>Left:</b> Step-by-step filtering to mine contrastive trajectory pairs for the
+                <em>agentic setting</em>.
+                <b>Right:</b> Generative editing and similarity-based retrieval to mine contrastive
+                image pairs for the <em>multimodal setting</em>.
+                A concrete \((C^+, C^-)\) example is shown alongside each method.
+              </p>
+            </div>
+          </div>
+
+          <div class="columns" style="margin-top: 1.5rem;">
+
+            <!-- Agentic -->
+            <div class="column">
+              <div class="construction-card">
+                <p class="title is-5" style="color: var(--color-context-blue); margin-bottom: 1rem;">
+                  Agentic: Trajectory Pair Search
+                </p>
+                <p>
+                  We construct contrastive trajectory pairs from 66k trajectories built with SWE-smith.
+                  Our pipeline applies a cascade of four increasingly restrictive filters:
+                  candidate trajectories must (i) originate from the same repository and commit,
+                  (ii) modify the same file, (iii) target the same function or class, and
+                  (iv) correspond to distinct but semantically related issues.
+                  Patch contents inside edit commands are masked with <code>&lt;PATCH_MASKED&gt;</code>
+                  to prevent trivial leakage.
+                </p>
+                <p>
+                  We apply automatic verification with GPT-5 to explicitly screen for and reject
+                  pairs with superficial shortcut cues or ambiguous labels.
+                  This cascade is deliberately aggressive: only <b>1k high-quality contrastive
+                  trajectory pairs</b> survive.
+                </p>
+                <div style="text-align: center; margin-top: 1rem;">
+                  <span class="stat-pill">1k agentic pairs</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Multimodal -->
+            <div class="column">
+              <div class="construction-card">
+                <p class="title is-5" style="color: var(--color-rl-red); margin-bottom: 1rem;">
+                  Multimodal: Image Pair Mining
+                </p>
+                <p>
+                  We collect image, question, and answer triplets from five domains: charts, geometry,
+                  non-geometric math, science diagrams, and natural images, covering diverse patterns
+                  of visual grounding.
+                  Two strategies construct \((C^+, C^-)\) pairs:
+                </p>
+                <p>
+                  <b>Generative editing</b> for natural images: GPT-5 proposes an edit instruction,
+                  Nano Banana 2 applies it, and a verifier rejects editing artifacts (blur, warping,
+                  implausible lighting) and global restyling. Yields <b>~700 pairs</b> from 2k candidates.
+                </p>
+                <p>
+                  <b>Similarity-based retrieval</b> for structured images: images are embedded with
+                  Qwen3-VL-Embedding-8B; pairs with cosine similarity ≥ 0.85 but different answers
+                  are retrieved. GPT-5 filters unrelated pairs. Yields <b>6,300 pairs</b> from 200k candidates.
+                </p>
+                <div style="text-align: center; margin-top: 1rem;">
+                  <span class="stat-pill red">7k multimodal pairs</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== METHOD ==================== -->
+  <section class="section" id="method">
+    <div class="container" style="margin-bottom: 2vh;">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">
+            <span style="color: var(--color-context-blue);">Context</span><span style="color: var(--color-rl-red);">RL</span>
+          </h2>
+          <div class="content has-text-justified">
+            <p>
+              We introduce <b>Context-Aware Reinforcement Learning (ContextRL)</b>, a training framework that
+              explicitly encourages models to ground their predictions in the provided context.
+              Our key idea is to augment standard RL post-training with a <em>context-selection signal</em>:
+              instead of only rewarding correct outputs, we additionally train the model to identify
+              <em>which context supports a given answer</em>.
+              Using the contrastive context pairs \((C^+, C^-)\) constructed above, we incorporate them
+              into standard GRPO post-training via a logit-level contrastive loss.
+            </p>
+
+            <h3 class="title is-4" style="margin-top: 1.75rem;">Contrastive Context Pairs</h3>
+            <p>
+              Each pair is associated with a query \(Q\) and an anchor answer \(A\), where \(C^+\) is the
+              <em>supporting</em> context for \(A\), and \(C^-\) is a minimally perturbed but
+              <em>confounding</em> alternative that instead supports a different answer.
+              The context takes the form of an agent trajectory \(\tau\) for agentic coding,
+              or an image \(I\) for multimodal tasks.
+            </p>
+
+            <h3 class="title is-4" style="margin-top: 1.75rem;">Context-Awareness Loss</h3>
+            <p>
+              Given a contrastive instance \(z = (Q, A, C^+, C^-)\), the model is prompted to choose
+              between \(C^+\) and \(C^-\) as a two-way multiple choice. Let
+              \(\ell_\theta^+(z)\) and \(\ell_\theta^-(z)\) be the next-token logits for the option-letter
+              tokens \(t^+\) and \(t^-\) at the answer position, computed by teacher forcing.
+              We define the margin
+              \(\Delta_\theta(z) = \ell_\theta^+(z) - \ell_\theta^-(z)\) and optimize:
+            </p>
+          </div>
+
+          <div class="method-box">
+            <p style="text-align: center; font-size: 1.05rem;">
+              $$\mathcal{L}_{\mathrm{CA}}(z;\,\theta)\;=\;-\log\,\sigma\!\left(\mathrm{clip}\!\left(\Delta_\theta(z),\;-c,\;c\right)\right)$$
+            </p>
+            <p style="text-align: left; margin-top: 0.5rem; margin-bottom: 0; font-size: 0.95rem;">
+              where \(\sigma(\cdot)\) is the sigmoid function and \(c > 0\) controls margin clipping.
+              This objective encourages correct context selection while preventing large margins from
+              dominating training. The loss is <b>modality-agnostic</b> and applies uniformly to
+              agent trajectories and images.
+            </p>
+          </div>
+
+          <div class="content has-text-justified" style="margin-top: 1.75rem;">
+            <h3 class="title is-4">Joint Training Objective</h3>
+            <p>
+              Let \(\mathcal{D}_{\mathrm{RL}}\) denote the task data and \(\mathcal{D}_{\mathrm{CA}}\)
+              the contrastive dataset. We jointly optimize:
+            </p>
+          </div>
+
+          <div class="method-box">
+            <p style="text-align: center; font-size: 1.05rem;">
+              $$\mathcal{L}(\theta)\;=\;\mathbb{E}_{x\,\sim\,\mathcal{D}_{\mathrm{RL}}}\!\left[\mathcal{L}_{\mathrm{GRPO}}(x;\theta)\right]
+              \;+\;\lambda\;\mathbb{E}_{z\,\sim\,\mathcal{D}_{\mathrm{CA}}}\!\left[\mathcal{L}_{\mathrm{CA}}(z;\theta)\right]$$
+            </p>
+            <p style="text-align: left; margin-top: 0.5rem; margin-bottom: 0; font-size: 0.95rem;">
+              where \(\lambda > 0\) balances task performance and context awareness.
+              GRPO optimizes for correct outputs, while \(\mathcal{L}_{\mathrm{CA}}\) enforces alignment
+              between outputs and their supporting context. We apply the same formulation across
+              both agentic and multimodal settings.
+            </p>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== RESULTS ==================== -->
+  <section class="section" id="results">
+    <div class="container">
+      <div class="columns is-centered has-text-centered">
+        <div class="column is-four-fifths">
+          <h2 class="title is-3">Experimental Results</h2>
+
+
+          <!-- Long-Horizon -->
+          <h3 class="title is-4" id="agentic-results">Long-Horizon Agentic Experiments</h3>
+          <div class="content has-text-justified">
+            <p>
+              We evaluate ContextRL using the agentic contrastive context pairs on two base models:
+              <b>Qwen3-8B</b> (general-purpose) and <b>Klear-AgentForge-8B</b> (fine-tuned for complex
+              agentic coding). Training data comprises 8k instances: 7k standard SWE-Gym tasks optimized
+              with \(\mathcal{L}_{\mathrm{GRPO}}\) and 1k contrastive trajectory pairs for
+              \(\mathcal{L}_{\mathrm{CA}}\).
+              We evaluate on five benchmarks, two in-distribution (SWE-Bench Verified, SWE-Bench Lite)
+              and three out-of-distribution (LiveCodeBench v6, LongBench v2, NIAH), to assess both
+              task-specific gains and generalization.
+            </p>
+          </div>
+
+          <div class="table-container" style="overflow-x: auto; margin: 1.5rem 0;">
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="text-align: left; min-width: 200px;">Model</th>
+                  <th colspan="2">In-distribution</th>
+                  <th colspan="4">Out-of-distribution</th>
+                </tr>
+                <tr>
+                  <th>SWE-Bench<br>Verified</th>
+                  <th>SWE-Bench<br>Lite</th>
+                  <th>LiveCodeBench<br>v6</th>
+                  <th>LongBench v2<br>Overall</th>
+                  <th>LongBench v2<br>Long</th>
+                  <th>NIAH</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="group-header"><td colspan="7"><em>Off-the-shelf reference models</em></td></tr>
+                <tr><td>Qwen3-14B</td><td>8.40</td><td>6.00</td><td>57.1</td><td>34.2</td><td>24.1</td><td>99.5</td></tr>
+                <tr><td>Qwen3-32B</td><td>8.40</td><td>6.00</td><td>61.1</td><td>36.8</td><td>31.5</td><td>99.3</td></tr>
+                <tr><td>Qwen3-Coder-30B</td><td>28.8</td><td>22.0</td><td>37.7</td><td>42.5</td><td>41.7</td><td>85.7</td></tr>
+
+                <tr class="group-header"><td colspan="7"><em>Trained from Qwen3-8B</em></td></tr>
+                <tr><td>Base model</td><td>5.00</td><td>2.70</td><td>44.6</td><td>31.6</td><td>27.8</td><td>98.8</td></tr>
+                <tr><td>RL baseline (GRPO)</td><td>6.20</td><td>2.70</td><td>46.3</td><td>31.8</td><td>26.9</td><td>98.5</td></tr>
+                <tr class="our-row"><td><b>ContextRL (Ours)</b></td><td class="best">7.00</td><td class="best">4.00</td><td class="best">47.4</td><td class="best">33.2</td><td class="best">29.6</td><td class="best">99.0</td></tr>
+
+                <tr class="group-header"><td colspan="7"><em>Trained from Klear-AgentForge-8B</em></td></tr>
+                <tr><td>Base model</td><td>26.6</td><td>21.0</td><td>21.7</td><td>27.4</td><td>21.3</td><td>68.3</td></tr>
+                <tr><td>RL baseline (GRPO)</td><td>28.0</td><td>21.7</td><td>22.3</td><td>27.0</td><td>24.1</td><td>65.5</td></tr>
+                <tr class="our-row"><td><b>ContextRL (Ours)</b></td><td class="best">30.0</td><td class="best">23.0</td><td class="best">24.0</td><td class="best">29.6</td><td class="best">28.7</td><td class="best">71.3</td></tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p style="font-size: 0.88rem; color: #555; text-align: left; margin-bottom: 1.5rem;">
+            Table 1: Main results on long-horizon benchmarks. ContextRL consistently outperforms the RL baseline
+            across all tasks for both base models. Resolve rate (%) is reported for SWE-Bench; accuracy (%) for others.
+          </p>
+
+          <div class="content has-text-justified">
+            <p>
+              <b>ContextRL consistently outperforms the RL baseline on every benchmark and for both base models.</b>
+              When trained from Klear-AgentForge-8B, ContextRL substantially outperforms Qwen3-32B (4× larger) and
+              the code-specialized Qwen3-Coder-30B on SWE-Bench, showing that a well-targeted context-aware objective
+              combined with a domain-adapted base can compensate for substantial differences in scale and pretraining.
+            </p>
+            <p>
+              On out-of-distribution long-context tasks, the generalization is particularly pronounced: on NIAH,
+              standard GRPO <em>regresses</em> relative to the base model, whereas ContextRL surpasses the base in
+              both cases. On LongBench v2, gains are most pronounced on the long-input subset, where input length
+              stretches context grounding the furthest. The results indicate that the learned signal transfers beyond the
+              agentic training domain.
+            </p>
+          </div>
+
+
+          <!-- Multimodal -->
+          <h3 class="title is-4" id="multimodal-results" style="margin-top: 2.5rem;">Multimodal Experiments</h3>
+          <div class="content has-text-justified">
+            <p>
+              We evaluate ContextRL on 12 diverse multimodal benchmarks spanning five sub-categories, using two
+              state-of-the-art vision-language models: <b>Qwen2.5-VL-7B-Instruct</b> and
+              <b>Qwen3-VL-8B-Instruct</b>. We compare four configurations: Base model, RL baseline (GRPO),
+              PAPO (a recent perception-aware RL), and ContextRL.
+              Multimodal training data comprises 45k instances: 38k standard single-image QA tasks plus
+              7k contrastive image pairs.
+            </p>
+          </div>
+
+          <div class="table-container" style="overflow-x: auto; margin: 1.5rem 0;">
+            <table class="result-table">
+              <thead>
+                <tr>
+                  <th rowspan="2" style="text-align: left; min-width: 190px;">Benchmark</th>
+                  <th colspan="4">Qwen2.5-VL-7B</th>
+                  <th colspan="3">Qwen3-VL-8B</th>
+                </tr>
+                <tr>
+                  <th>Base</th><th>RL Base</th><th>PAPO</th><th style="color: var(--color-rl-red);">Ours</th>
+                  <th>Base</th><th>RL Base</th><th style="color: var(--color-rl-red);">Ours</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="group-header"><td colspan="8"><em>Mathematical Reasoning</em></td></tr>
+                <tr><td>MathVista</td><td>68.2</td><td>72.5</td><td>72.7</td><td class="best">73.6</td><td>75.8</td><td>78.7</td><td class="best">79.8</td></tr>
+                <tr><td>MathVerse</td><td>43.9</td><td>45.3</td><td class="best">49.7</td><td>49.1</td><td>56.1</td><td>65.0</td><td class="best">66.4</td></tr>
+                <tr><td>MathVision</td><td>22.8</td><td>25.5</td><td class="best">27.3</td><td>26.8</td><td>46.2</td><td>49.2</td><td class="best">52.0</td></tr>
+
+                <tr class="group-header"><td colspan="8"><em>General Multimodal Understanding</em></td></tr>
+                <tr><td>MMMU-Pro</td><td>36.6</td><td>41.3</td><td>42.6</td><td class="best">42.8</td><td>41.3</td><td>55.9</td><td class="best">57.5</td></tr>
+                <tr><td>MMMU</td><td>50.7</td><td>53.3</td><td>53.2</td><td class="best">54.6</td><td>66.4</td><td>69.1</td><td class="best">70.1</td></tr>
+
+                <tr class="group-header"><td colspan="8"><em>Fine-grained Visual Perception</em></td></tr>
+                <tr><td>V*</td><td>70.1</td><td>70.7</td><td>71.7</td><td class="best">73.3</td><td>82.2</td><td>84.8</td><td class="best">85.9</td></tr>
+                <tr><td>MMStar</td><td>62.6</td><td>64.1</td><td>63.4</td><td class="best">65.1</td><td>70.5</td><td>73.5</td><td class="best">74.8</td></tr>
+                <tr><td>BLINK</td><td>55.3</td><td>56.5</td><td>58.5</td><td class="best">58.9</td><td>64.4</td><td>65.1</td><td class="best">66.6</td></tr>
+
+                <tr class="group-header"><td colspan="8"><em>Scientific Reasoning</em></td></tr>
+                <tr><td>ScienceQA</td><td>88.2</td><td>91.0</td><td>92.7</td><td class="best">95.4</td><td>94.4</td><td>95.6</td><td class="best">96.6</td></tr>
+                <tr><td>PhyX</td><td>25.4</td><td>48.7</td><td>46.8</td><td class="best">50.0</td><td>45.5</td><td>72.1</td><td class="best">73.4</td></tr>
+                <tr><td>OlympiadBench Phy</td><td>1.5</td><td>3.1</td><td>2.2</td><td class="best">4.6</td><td>7.9</td><td>8.1</td><td class="best">9.9</td></tr>
+
+                <tr class="group-header"><td colspan="8"><em>Real-world Scene Understanding</em></td></tr>
+                <tr><td>MME-RealWorld Lite</td><td>38.4</td><td>45.1</td><td>45.1</td><td class="best">46.7</td><td>48.7</td><td>51.9</td><td class="best">54.8</td></tr>
+
+                <tr class="overall-row">
+                  <td>Overall Avg.</td><td>47.0</td><td>51.4</td><td>52.2</td><td class="best">53.4</td>
+                  <td>58.3</td><td>64.1</td><td class="best">65.7</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <p style="font-size: 0.88rem; color: #555; text-align: left; margin-bottom: 1.5rem;">
+            Table 2: Main results on 12 diverse multimodal benchmarks. ContextRL achieves the best performance
+            across all sub-categories and surpasses both the RL baseline and the strong reference method PAPO.
+            Accuracy (%) is reported.
+          </p>
+
+          <div class="content has-text-justified">
+            <p>
+              <b>ContextRL outperforms the RL baseline on every benchmark and for both base models.</b>
+              The improvements are not concentrated in any single category, but instead span
+              perception-heavy tasks (V*, MMStar, BLINK, MME-RealWorld Lite), reasoning-heavy tasks
+              (MathVista, PhyX, OlympiadBench Phy), and mixed tasks. The results indicate that enhanced context
+              grounding propagates into stronger higher-level reasoning broadly.
+              ContextRL also surpasses PAPO, a recent method purpose-built for improving visual perception
+              in RL, improving overall average by <b>+1.2%</b> on Qwen2.5-VL.
+            </p>
+          </div>
+
+
+          <!-- Analysis -->
+          <h3 class="title is-4" id="analysis" style="margin-top: 2.5rem;">
+            Analysis: Why Data Augmentation Fails
+          </h3>
+          <div class="content has-text-justified">
+            <p>
+              To isolate whether the improvement arises from the contrastive <em>data itself</em> or from
+              the <em>training objective</em> used to consume it, we compare against two natural baselines
+              that utilize the same contrastive data through standard augmentation:
+            </p>
+            <ul>
+              <li>
+                <b>DA-SFT:</b> Supervised fine-tuning on the contrastive data (cross-entropy to predict the
+                correct context), then standard GRPO on the task data.
+              </li>
+              <li>
+                <b>DA-RL:</b> Contrastive examples mixed directly into the RL training stream, treated as a
+                binary decision with reward 1 if the model selects the correct context and 0 otherwise.
+              </li>
+            </ul>
+          </div>
+
+          <div style="margin: 2rem 0;">
+            <div class="content has-text-centered">
+              <img src="assets/fig_disc_vs_endtask.jpg" width="100%" alt="Context-selection accuracy vs end-task performance">
+              <p style="text-align: left; margin-top: 0.75rem;">
+                <b>Figure 5: Context-selection accuracy versus end-task performance.</b>
+                The \(x\)-axis denotes selection accuracy and the \(y\)-axis denotes end-task performance.
+                Top-right is optimal. DA-SFT achieves high selection accuracy but collapses on the \(y\)-axis.
+                DA-RL fails to learn discrimination at all. ContextRL is the <em>only</em> method that couples
+                high context awareness with consistent end-task improvements across all four model configurations.
+              </p>
+            </div>
+          </div>
+
+          <div class="content has-text-justified">
+            <p>Three clear patterns emerge from the analysis:</p>
+            <ol>
+              <li>
+                <b>Outcome-only RL fails to learn context selection.</b>
+                The RL baseline stays near the base-model cluster, showing that final-task rewards alone
+                provide little signal for distinguishing context-grounded reasoning from shortcuts.
+              </li>
+              <li>
+                <b>DA-SFT learns context selection but harms the policy.</b>
+                DA-SFT achieves the highest selection accuracy in nearly every setting, but SFT on
+                short-answer examples shifts the model distribution away from the long-form, multi-turn
+                patterns the agent scaffold requires — catastrophic in agentic settings, and largely
+                ineffective in multimodal ones.
+              </li>
+              <li>
+                <b>Context selection skill alone is insufficient.</b>
+                Both DA-SFT and ContextRL push selection accuracy to 85–93%, but only ContextRL
+                consistently improves downstream task performance. The model must acquire context-selection
+                capability <em>without disrupting</em> the policy behaviors required for the original task
+                distribution. The contrastive data alone does not achieve this — the key is the objective.
+              </li>
+            </ol>
+          </div>
+
+          <div class="content has-text-justified" style="margin-top: 1.75rem;">
+            <h3 class="title is-4">Why ContextRL Avoids Both Failure Modes</h3>
+            <p>
+              The key factor is not the contrastive data alone, but how the signal is integrated into training.
+              ContextRL incorporates the context-awareness loss as a bounded auxiliary objective inside the
+              on-policy GRPO loop. Two properties are critical:
+            </p>
+          </div>
+          <div class="columns" style="margin-top: 0.5rem;">
+            <div class="column">
+              <div class="construction-card">
+                <p class="title is-5" style="color: var(--color-context-blue);">(a) Updates Remain Constrained</p>
+                <p>
+                  The GRPO importance-ratio clipping and KL regularization keep the policy close to the
+                  reference model \(\pi_\mathrm{ref}\), while the clipped margin objective suppresses
+                  auxiliary gradients once \(C^+\) and \(C^-\) are well separated.
+                  Together, these preserve the original policy distribution and prevent the catastrophic
+                  forgetting observed in DA-SFT.
+                </p>
+              </div>
+            </div>
+            <div class="column">
+              <div class="construction-card">
+                <p class="title is-5" style="color: var(--color-rl-red);">(b) The Auxiliary Signal is Dense</p>
+                <p>
+                  Unlike DA-RL's sparse 0/1 rewards, \(\mathcal{L}_{\mathrm{CA}}\) directly supervises
+                  the relative preference between \(C^+\) and \(C^-\) on <em>every</em> contrastive example.
+                  Meaningful gradients are therefore produced even when the current policy would rarely
+                  sample the correct context — precisely the regime where outcome-only RL struggles.
+                </p>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== SHARE ==================== -->
+  <section class="section" id="Share">
+    <div class="column has-text-centered">
+      <h2 class="title is-3 has-text-centered">
+        Share <span style="color: var(--color-context-blue);"><b>Context</b></span><span style="color: var(--color-rl-red);"><b>RL</b></span>
+      </h2>
+      <div class="social-share-buttons" style="margin-top: 20px;">
+        <a href="https://twitter.com/intent/tweet?text=Introducing%20ContextRL%3A%20Context-Aware%20RL%20for%20Agentic%20and%20Multimodal%20LLMs.%20A%20lightweight%20contrastive%20objective%20on%20top%20of%20GRPO%20that%20fixes%20context%20unawareness%20in%20LLMs%20%E2%80%94%20improving%20both%20coding%20agents%20and%20multimodal%20reasoning."
+           class="button is-info is-outlined" target="_blank">
+          <span class="icon"><i class="fab fa-twitter"></i></span>
+          <span>Share on X (Twitter)</span>
+        </a>
+        <a href="https://www.linkedin.com/feed/?shareActive=true&shareUrl=https%3A%2F%2Fxupy2003.github.io%2FContextAwareRL"
+           class="button is-info is-outlined" style="margin-left: 10px;" target="_blank">
+          <span class="icon"><i class="fab fa-linkedin"></i></span>
+          <span>Share on LinkedIn</span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+
+  <!-- ==================== BIBTEX ==================== -->
+  <section class="section" id="BibTeX">
+    <div class="container is-max-desktop content">
+      <h2 class="title is-3 has-text-centered">BibTeX</h2>
+      <pre><code>TODO: Add BibTeX</code></pre>
+    </div>
+  </section>
+
+
+  <!-- ==================== ORG BANNERS ==================== -->
+  <section>
+    <div class="section" id="org-banners" style="display:flex">
+      <a href="https://www.princeton.edu/" target="_blank" rel="external">
+        <img class="center-block org-banner"
+             src="assets/University-of-Princeton-Logo.png"
+             alt="Princeton University">
+      </a>
+      <a href="https://www.ucdavis.edu/" target="_blank" rel="external">
+        <img class="center-block org-banner"
+             src="assets/The_University_of_California_Davis.svg.png"
+             alt="UC Davis">
+      </a>
+    </div>
+  </section>
+
+
+  <!-- ==================== FOOTER ==================== -->
+  <footer class="footer">
+    <div class="content has-text-centered"></div>
+    <div class="columns is-centered">
+      <div class="column is-8">
+        <div class="content">
+          <p>
+            This website is adapted from <a href="https://nerfies.github.io/" target="_blank">Nerfies</a>
+            and <a href="https://octotools.github.io/" target="_blank">OctoTools</a>, licensed under a
+            <a rel="license" href="http://creativecommons.org/licenses/by-sa/4.0/">Creative Commons
+            Attribution-ShareAlike 4.0 International License</a>.
+          </p>
+        </div>
+      </div>
+    </div>
+  </footer>
+
+</body>
+
+  <!-- Back to top button -->
+  <button onclick="topFunction()" id="topButton" title="Go to top">
+    <i class="fas fa-arrow-up"></i>
+  </button>
+
+  <script>
+    function topFunction() {
+      document.body.scrollTop = 0;
+      document.documentElement.scrollTop = 0;
+    }
+    window.onscroll = function() {
+      var btn = document.getElementById("topButton");
+      if (btn) {
+        btn.style.display = (document.body.scrollTop > 300 || document.documentElement.scrollTop > 300)
+          ? "block" : "none";
+      }
+    };
+  </script>
+
+</html>

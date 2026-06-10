@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(file /Users/peiyangxu/study/ContextAwareRL/Website/assets/*.pdf /Users/peiyangxu/study/ContextAwareRL/Website/assets/*.png)",
+      "Bash(open *)"
+    ]
+  }
+}
