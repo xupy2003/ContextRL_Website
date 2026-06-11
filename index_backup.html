@@ -201,10 +201,6 @@
               Context-Aware RL for Agentic and Multimodal LLMs
             </h1>
 
-            <div style="margin-top: -0.5rem; margin-bottom: 0.5rem;">
-              <img src="assets/Princeton_seal.svg" alt="Princeton University" style="height: 3.5em; vertical-align: middle;">
-            </div>
-
             <div class="is-size-5 publication-authors">
               <span class="author-block">
                 <a href="https://xupy2003.github.io/" target="_blank">Peiyang Xu</a><sup>1</sup>
@@ -299,10 +295,18 @@
           <h2 class="title is-3">Introduction</h2>
           <div class="content has-text-justified">
             <p>
-              Modern LLMs must ground decisions in <b>sparse yet decisive contextual evidence</b> — an early
-              observation in a long agent trajectory, a single tool-trace line, or a subtle visual detail.
-              When such evidence is overlooked, models produce locally plausible but context-inconsistent
-              outputs. We call this failure mode <b>context unawareness</b>.
+              Large language models (LLMs) have progressed into general-purpose reasoning engines capable of
+              operating over rich, long-form contexts, including agentic systems that interleave reasoning with
+              tool use over extended horizons, and multimodal models that combine fine-grained visual perception
+              with textual reasoning. As these systems scale to increasingly complex tasks, their performance
+              depends not only on reasoning ability, but also on
+              <b>grounding decisions in sparse yet decisive contextual evidence</b>: an early observation in
+              a long agent trajectory, a single line in a tool trace, or a subtle visual detail in a dense image.
+            </p>
+            <p>
+              When such evidence is overlooked, models make locally plausible but context-inconsistent decisions.
+              We call this failure mode <b>context unawareness</b>: the relevant information is present in the
+              context, yet the model's prediction is not grounded in it.
             </p>
           </div>
 
@@ -310,22 +314,33 @@
             <div class="content has-text-centered">
               <img src="assets/ContextRL_Failcase.png" width="100%" alt="Context unawareness failure cases">
               <p style="text-align: left; margin-top: 0.75rem;">
-                <b>Figure 1: Context unawareness in agentic and multimodal settings.</b>
-                <b>Left:</b> The model removes the definition of <code>i</code> that is later referenced,
-                causing a runtime error.
-                <b>Right:</b> The model misreads \(g(x) \to y\!=\!3\) as \(2\), producing an incorrect answer.
+                <b>Figure 1: Context unawareness manifests across both agentic and multimodal systems.</b>
+                <b>Left:</b> In an agentic code-editing setting, the model has access to the relevant source file
+                but fails to maintain consistency across edits, removing the definition of variable
+                <code>i</code> that is subsequently referenced, causing a runtime error.
+                <b>Right:</b> In a multimodal reasoning setting, the model fails to correctly ground its answer
+                in the visual evidence. Although \(g(x)\) approaches \(y\!=\!3\) as \(x \to -1\), the model
+                misreads the value as \(2\) and produces an incorrect prediction.
               </p>
             </div>
           </div>
 
           <div class="content has-text-justified">
             <p>
-              A controlled <b>contrastive context probe</b> reveals a <b>~40-point gap</b> between proprietary
-              and open-source models on context-selection accuracy, despite open-source models being competitive
-              on standard benchmarks. Motivated by this, we propose
-              <b><span style="color: var(--color-context-blue);">Context</span><span style="color: var(--color-rl-red);">RL</span></b>,
-              a post-training method that augments GRPO with a logit-level contrastive loss over
-              <b>1k agentic</b> and <b>7k multimodal</b> contrastive context pairs.
+              To quantify this failure mode, we introduce a controlled <b>contrastive context probe</b> and find
+              a roughly 40-point gap between proprietary and widely-used open-source models on context selection
+              accuracy, even as open-source models remain competitive on standard benchmarks.
+            </p>
+            <p>
+              Motivated by this, we propose
+              <b><span style="color: var(--color-context-blue);">Context</span><span style="color: var(--color-rl-red);">RL</span></b>
+              (Context-Aware Reinforcement Learning), a post-training method that augments RL with an explicit
+              context-selection auxiliary objective.
+              We construct contrastive context data in two domains: for coding agents, trajectories serve as
+              contexts, yielding <b>1k pairs</b> built via condition filtering; for multimodal reasoning, images
+              serve as contexts, yielding <b>7k pairs</b> via generative editing and similarity search.
+              ContextRL is incorporated into standard GRPO post-training via a logit-level contrastive loss
+              that favors the context aligned with the ground-truth answer.
             </p>
           </div>
 
@@ -356,22 +371,13 @@
               </figcaption>
             </figure>
             <p>
-              To quantify context unawareness, we construct a controlled <b>contrastive context probe</b>:
-              200 contrastive pairs from agentic trajectories and 200 from visual question answering (VQA) images.
-              Each example presents the model with a question, a candidate answer, and two closely matched contexts
-              that support <em>different</em> answers — the model must select the context that justifies the
-              candidate answer.
+              We probe 400 contrastive pairs (200 agentic, 200 VQA): given a question, an answer, and two closely matched contexts supporting <em>different</em> answers, the model must identify the supporting one.
+              Proprietary models (GPT-4.1, Claude Opus 4.7) score &gt;95%; popular open-source models (Qwen3-VL 8B, Qwen3.5 9B) fall near random (~50%), a <b>~40-point gap</b> invisible on standard benchmarks.
             </p>
-            <p>
-              This simple test reveals a <b>~40-point gap</b> between proprietary models (GPT-4.1, Claude Opus 4.7)
-              and widely-used open-source models. Notably, strong open-source models such as Qwen3-VL 8B and
-              Qwen3.5 9B perform <b>near random choice</b> on this probe, despite their competitive performance
-              on standard benchmarks. These results suggest that strong benchmark performance can
-              <em>obscure</em> failures in context grounding.
-            </p>
-            <div class="finding-box" style="margin-top: 1rem; overflow: hidden;">
-              <b>Key Insight:</b> Strong benchmark performance can obscure failures in context grounding.
-              Context unawareness is a distinct capability gap that accuracy-based evaluations do not capture.
+            <div class="finding-box">
+              <b>Key Insight:</b> Models that score highly on standard benchmarks may still fail to identify
+              the specific evidence that supports a given answer. Context unawareness is a distinct capability
+              gap that standard accuracy-based evaluations do not capture.
             </div>
             <div style="clear: both;"></div>
           </div>
@@ -460,19 +466,32 @@
           </h2>
           <div class="content has-text-justified">
             <p>
-              <b>Context-Aware Reinforcement Learning (ContextRL)</b> augments standard GRPO with an explicit
-              <em>context-selection signal</em>: alongside the task reward, the model is trained to identify
-              which context supports a given answer. Each contrastive instance \(z = (Q, A, C^+, C^-)\)
-              pairs an anchor answer \(A\) with a <em>supporting</em> context \(C^+\) and a minimally
-              perturbed <em>confounding</em> alternative \(C^-\) — a trajectory for agentic coding, an image
-              for multimodal tasks.
+              We introduce <b>Context-Aware Reinforcement Learning (ContextRL)</b>, a training framework that
+              explicitly encourages models to ground their predictions in the provided context.
+              Our key idea is to augment standard RL post-training with a <em>context-selection signal</em>:
+              instead of only rewarding correct outputs, we additionally train the model to identify
+              <em>which context supports a given answer</em>.
+              Using the contrastive context pairs \((C^+, C^-)\) constructed above, we incorporate them
+              into standard GRPO post-training via a logit-level contrastive loss.
+            </p>
+
+            <h3 class="title is-4" style="margin-top: 1.75rem;">Contrastive Context Pairs</h3>
+            <p>
+              Each pair is associated with a query \(Q\) and an anchor answer \(A\), where \(C^+\) is the
+              <em>supporting</em> context for \(A\), and \(C^-\) is a minimally perturbed but
+              <em>confounding</em> alternative that instead supports a different answer.
+              The context takes the form of an agent trajectory \(\tau\) for agentic coding,
+              or an image \(I\) for multimodal tasks.
             </p>
 
             <h3 class="title is-4" style="margin-top: 1.75rem;">Context-Awareness Loss</h3>
             <p>
-              The model is asked to select between \(C^+\) and \(C^-\) as a two-way choice.
-              Let \(\Delta_\theta(z) = \ell_\theta^+(z) - \ell_\theta^-(z)\) be the logit margin between
-              the two option tokens (computed by teacher forcing). We optimize:
+              Given a contrastive instance \(z = (Q, A, C^+, C^-)\), the model is prompted to choose
+              between \(C^+\) and \(C^-\) as a two-way multiple choice. Let
+              \(\ell_\theta^+(z)\) and \(\ell_\theta^-(z)\) be the next-token logits for the option-letter
+              tokens \(t^+\) and \(t^-\) at the answer position, computed by teacher forcing.
+              We define the margin
+              \(\Delta_\theta(z) = \ell_\theta^+(z) - \ell_\theta^-(z)\) and optimize:
             </p>
           </div>
 
@@ -481,14 +500,19 @@
               $$\mathcal{L}_{\mathrm{CA}}(z;\,\theta)\;=\;-\log\,\sigma\!\left(\mathrm{clip}\!\left(\Delta_\theta(z),\;-c,\;c\right)\right)$$
             </p>
             <p style="text-align: left; margin-top: 0.5rem; margin-bottom: 0; font-size: 0.95rem;">
-              \(\sigma\) is the sigmoid; \(c > 0\) clips the margin to prevent large gradients from
-              dominating training. The loss is <b>modality-agnostic</b> — identical for trajectories and images.
+              where \(\sigma(\cdot)\) is the sigmoid function and \(c > 0\) controls margin clipping.
+              This objective encourages correct context selection while preventing large margins from
+              dominating training. The loss is <b>modality-agnostic</b> and applies uniformly to
+              agent trajectories and images.
             </p>
           </div>
 
           <div class="content has-text-justified" style="margin-top: 1.75rem;">
             <h3 class="title is-4">Joint Training Objective</h3>
-            <p>The final objective mixes the task RL signal with the context-awareness loss:</p>
+            <p>
+              Let \(\mathcal{D}_{\mathrm{RL}}\) denote the task data and \(\mathcal{D}_{\mathrm{CA}}\)
+              the contrastive dataset. We jointly optimize:
+            </p>
           </div>
 
           <div class="method-box">
@@ -497,9 +521,10 @@
               \;+\;\lambda\;\mathbb{E}_{z\,\sim\,\mathcal{D}_{\mathrm{CA}}}\!\left[\mathcal{L}_{\mathrm{CA}}(z;\theta)\right]$$
             </p>
             <p style="text-align: left; margin-top: 0.5rem; margin-bottom: 0; font-size: 0.95rem;">
-              \(\mathcal{L}_{\mathrm{GRPO}}\) rewards correct outputs; \(\mathcal{L}_{\mathrm{CA}}\) enforces
-              context grounding. \(\lambda\) balances the two. The same formulation applies to both
-              agentic and multimodal settings.
+              where \(\lambda > 0\) balances task performance and context awareness.
+              GRPO optimizes for correct outputs, while \(\mathcal{L}_{\mathrm{CA}}\) enforces alignment
+              between outputs and their supporting context. We apply the same formulation across
+              both agentic and multimodal settings.
             </p>
           </div>
 
@@ -507,7 +532,6 @@
       </div>
     </div>
   </section>
-
 
 
   <!-- ==================== RESULTS ==================== -->
